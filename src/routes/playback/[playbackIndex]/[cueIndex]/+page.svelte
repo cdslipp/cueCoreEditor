@@ -41,12 +41,39 @@
 		return mapDmxToFixtures(dmxState, fixtures, 4);
 	});
 
-	// Get color from RGBW values
-	function rgbwToColor(channels: { name: string; value: number }[]): string {
-		const r = channels.find((c) => c.name === 'R')?.value ?? 0;
-		const g = channels.find((c) => c.name === 'G')?.value ?? 0;
-		const b = channels.find((c) => c.name === 'B')?.value ?? 0;
+	// Known color trait IDs (discovered from backup analysis)
+	// TODO: These mappings need verification with actual CueCore hardware
+	const COLOR_TRAIT_IDS = {
+		red: 1001,
+		green: 1002,
+		blue: 1003,
+		white: 1005
+	};
+
+	// Get color from channel trait IDs or fallback to first 3 channels
+	function getColorPreview(channels: { name: string; traitId?: number; value: number }[]): string {
+		// Try to find channels by known trait IDs first
+		const r = channels.find((c) => c.traitId === COLOR_TRAIT_IDS.red)?.value
+			?? channels[0]?.value ?? 0;
+		const g = channels.find((c) => c.traitId === COLOR_TRAIT_IDS.green)?.value
+			?? channels[1]?.value ?? 0;
+		const b = channels.find((c) => c.traitId === COLOR_TRAIT_IDS.blue)?.value
+			?? channels[2]?.value ?? 0;
 		return `rgb(${r}, ${g}, ${b})`;
+	}
+
+	// Get appropriate color for a trait ID display
+	function getTraitColor(traitId: number | undefined): string {
+		switch (traitId) {
+			case 1001: return 'text-red-400';     // Red
+			case 1002: return 'text-green-400';   // Green
+			case 1003: return 'text-blue-400';    // Blue
+			case 1005: return 'text-gray-100';    // White
+			case 2001:
+			case 2002: return 'text-purple-400';  // Pan/Tilt (movement)
+			case 4001: return 'text-amber-400';   // Intensity?
+			default: return 'text-gray-300';
+		}
 	}
 
 	// View mode for frame data
@@ -225,19 +252,19 @@
 									<!-- Color preview -->
 									<div
 										class="mb-2 h-8 rounded"
-										style="background-color: {rgbwToColor(fixture.channels)}; border: 1px solid rgba(255,255,255,0.2);"
+										style="background-color: {getColorPreview(fixture.channels)}; border: 1px solid rgba(255,255,255,0.2);"
 									></div>
-									<!-- Channel values -->
-									<div class="grid grid-cols-4 gap-1 text-center text-xs">
+									<!-- Channel values - dynamic grid based on channel count -->
+									<div class="grid gap-1 text-center text-xs" style="grid-template-columns: repeat({Math.min(fixture.channels.length, 6)}, minmax(0, 1fr));">
 										{#each fixture.channels as channel}
 											<div>
-												<div class="{channel.name === 'R' ? 'text-red-400' : channel.name === 'G' ? 'text-green-400' : channel.name === 'B' ? 'text-blue-400' : 'text-gray-300'}">{channel.value}</div>
-												<div class="text-gray-500">{channel.name}</div>
+												<div class="{getTraitColor(channel.traitId)}">{channel.value}</div>
+												<div class="text-gray-500 text-[10px] truncate" title={channel.name}>{channel.name}</div>
 											</div>
 										{/each}
 									</div>
 									<div class="mt-1 text-center text-xs text-gray-500">
-										@{fixture.startAddress}
+										@{fixture.startAddress} ({fixture.channels.length}ch)
 									</div>
 								</div>
 							{/each}

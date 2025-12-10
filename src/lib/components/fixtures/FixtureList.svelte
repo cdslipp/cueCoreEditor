@@ -2,6 +2,7 @@
 	import { backupStore } from '$lib/stores/backup-store.svelte';
 	import type { Fixture, FixtureGroup } from '$lib/types/backup';
 	import XmlInfoButton from '$lib/components/XmlInfoButton.svelte';
+	import { formatTraitIds } from '$lib/parser/personality-parser';
 
 	// Group fixtures by their label prefix (e.g., "Facade 1" -> "Facade")
 	function groupFixtures(fixtures: Fixture[]): FixtureGroup[] {
@@ -54,7 +55,10 @@
 								DMX Address
 							</th>
 							<th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-								UID
+								Channels
+							</th>
+							<th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+								Trait IDs
 							</th>
 							<th class="w-10 px-4 py-2"></th>
 						</tr>
@@ -72,8 +76,22 @@
 									{fixture.address + 1}
 									<span class="text-xs text-gray-400">(0-indexed: {fixture.address})</span>
 								</td>
-								<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-400">
-									{fixture.uid ?? '—'}
+								<td class="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
+									{#if fixture.parsedPersonality}
+										<span class="font-medium">{fixture.parsedPersonality.channelCount}</span>
+										<span class="ml-1 text-xs text-gray-400">
+											({fixture.parsedPersonality.format})
+										</span>
+									{:else}
+										<span class="text-gray-400">—</span>
+									{/if}
+								</td>
+								<td class="px-4 py-2 text-sm font-mono text-gray-600">
+									{#if fixture.parsedPersonality}
+										<span class="text-xs">{formatTraitIds(fixture.parsedPersonality)}</span>
+									{:else}
+										<span class="text-gray-400">—</span>
+									{/if}
 								</td>
 								<td class="whitespace-nowrap px-4 py-2 text-sm">
 									<XmlInfoButton xml={fixture.rawXml} />

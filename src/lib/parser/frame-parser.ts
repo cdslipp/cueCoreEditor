@@ -88,27 +88,53 @@ export interface FixtureChannelData {
 	fixtureIndex: number;
 	fixtureLabel: string;
 	startAddress: number;
-	channels: { name: string; value: number }[];
+	channels: { name: string; traitId?: number; value: number }[];
+}
+
+import type { ParsedPersonality } from './personality-parser';
+
+export interface FixtureWithPersonality {
+	index: number;
+	label: string;
+	address: number;
+	parsedPersonality?: ParsedPersonality;
 }
 
 export function mapDmxToFixtures(
 	dmxState: Map<number, number>,
-	fixtures: { index: number; label: string; address: number }[],
-	channelCount: number = 4 // Default RGBW
+	fixtures: FixtureWithPersonality[],
+	defaultChannelCount: number = 4 // Fallback if no personality
 ): FixtureChannelData[] {
 	const result: FixtureChannelData[] = [];
-	const channelNames = ['R', 'G', 'B', 'W', 'A', 'UV', 'Ch7', 'Ch8'];
 
 	for (const fixture of fixtures) {
 		const startAddr = fixture.address + 1; // Convert to 1-indexed
-		const channels: { name: string; value: number }[] = [];
+		const channels: { name: string; traitId?: number; value: number }[] = [];
 		let hasData = false;
+
+		// Use personality channel count if available, otherwise default
+		const personality = fixture.parsedPersonality;
+		const channelCount = personality?.channelCount ?? defaultChannelCount;
 
 		for (let i = 0; i < channelCount; i++) {
 			const addr = startAddr + i;
 			const value = dmxState.get(addr) ?? 0;
+
+			// Get trait ID from personality if available
+			const traitId = personality?.channels[i]?.traitId;
+			const hasFlag = personality?.channels[i]?.hasFlag;
+
+			// Generate name: use trait ID if available, otherwise generic
+			let name: string;
+			if (traitId !== undefined) {
+				name = `${traitId}${hasFlag ? '*' : ''}`;
+			} else {
+				name = `Ch${i + 1}`;
+			}
+
 			channels.push({
-				name: channelNames[i] ?? `Ch${i + 1}`,
+				name,
+				traitId,
 				value
 			});
 			if (value > 0) hasData = true;

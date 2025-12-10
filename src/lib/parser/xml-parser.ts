@@ -12,6 +12,7 @@ import type {
 	TaskParameter,
 	Track
 } from '$lib/types/backup';
+import { parsePersonality } from './personality-parser';
 
 // Helper to safely get attribute value
 function attr(el: Element, name: string, defaultValue = ''): string {
@@ -58,12 +59,14 @@ function parsePatch(doc: Document): Fixture[] {
 	const fixtureEls = doc.querySelectorAll('patch > fixture');
 
 	fixtureEls.forEach((el) => {
+		const personalityBase64 = attr(el, 'personality');
 		fixtures.push({
 			index: attrInt(el, 'index'),
 			label: attr(el, 'label'),
 			address: attrInt(el, 'address'),
 			virtualDimmer: attrBool(el, 'virtualdimmer'),
-			personality: attr(el, 'personality'),
+			personality: personalityBase64,
+			parsedPersonality: parsePersonality(personalityBase64) ?? undefined,
 			uid: el.getAttribute('uid') ?? undefined,
 			rawXml: getOuterXml(el)
 		});

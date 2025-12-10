@@ -1,5 +1,7 @@
 // Visual Productions CueCore3 Backup File Types
 
+import type { ParsedPersonality } from '$lib/parser/personality-parser';
+
 export interface BackupFile {
 	header: BackupHeader;
 	patch: Fixture[];
@@ -26,6 +28,7 @@ export interface Fixture {
 	address: number;
 	virtualDimmer: boolean;
 	personality: string; // base64 encoded
+	parsedPersonality?: ParsedPersonality; // Decoded personality data
 	uid?: string;
 	rawXml?: string; // Original XML for debugging
 }
